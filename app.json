@@ -1,0 +1,25 @@
+{
+  "expo": {
+     "name": "SafeZone_final",
+     "slug": "SafeZone_final",
+     "version": "1.0.0",
+     "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification-sound.wav"]
+        }
+      ]
+    ],
+    "android": {
+      "permissions": ["NOTIFICATIONS"]
+    },
+    "ios": {
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
+    }
+  }
+ }
