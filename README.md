@@ -53,10 +53,11 @@ SafeZone היא אפליקציה חכמה למצבי חירום, שנבנתה ב
 
 </div>
 
-![מסך פתיחה של האפליקציה](./splash-screen.png)
+<p align="right">
+  <img src="./Login.png" alt="מסך פתיחה של האפליקציה" width="100"/>
+</p>
 
 ---
-
 ## 📦 טכנולוגיות בשימוש
 
 - [React Native](https://reactnative.dev/)
