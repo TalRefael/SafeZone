@@ -20,11 +20,23 @@ const ChatScreen = ({ route, navigation }) => {
   const auth = getAuth();
   const currentUser = auth.currentUser;
 
+  // החלפה: נעדיף להשתמש ב-currentUser.uid במקום currentUserId
+  const actualCurrentUserId = currentUserId || currentUser?.uid;
+
+  // בדיקה שהמשתמש מחובר ויש לו מזהה
+  useEffect(() => {
+    if (!actualCurrentUserId) {
+      Alert.alert('שגיאה', 'לא ניתן לזהות את המשתמש. אנא התחבר מחדש.');
+      navigation.goBack();
+      return;
+    }
+  }, [actualCurrentUserId, navigation]);
+
   // יצירת מזהה ייחודי לצ'אט בין המשתמש הנוכחי למתנדב
-  const chatId = [currentUserId, volunteerId].sort().join('_');
+  const chatId = actualCurrentUserId && volunteerId ? [actualCurrentUserId, volunteerId].sort().join('_') : '';
 
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!actualCurrentUserId || !chatId) return;
 
     // האזנה להודעות חדשות בצ'אט הספציפי
     const messagesRef = collection(db, 'chatMessages');
@@ -47,17 +59,28 @@ const ChatScreen = ({ route, navigation }) => {
 
     // ניקוי ההאזנה כשהמסך נסגר
     return () => unsubscribe();
-  }, [chatId, db]);
+  }, [chatId, db, actualCurrentUserId]);
 
   const sendMessage = async () => {
     if (!message.trim()) return;
+    
+    // בדיקה נוספת לפני שליחה
+    if (!actualCurrentUserId) {
+      Alert.alert('שגיאה', 'לא ניתן לזהות את המשתמש');
+      return;
+    }
+
+    if (!volunteerId) {
+      Alert.alert('שגיאה', 'לא ניתן לזהות את המתנדב');
+      return;
+    }
 
     try {
       const messagesRef = collection(db, 'chatMessages');
       await addDoc(messagesRef, {
         chatId,
         text: message.trim(),
-        senderId: currentUserId,
+        senderId: actualCurrentUserId, // שימוש ב-actualCurrentUserId
         receiverId: volunteerId,
         timestamp: serverTimestamp(),
         read: false
@@ -66,17 +89,19 @@ const ChatScreen = ({ route, navigation }) => {
       setMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
-      Alert.alert('שגיאה', 'לא ניתן לשלוח את ההודעה');
+      Alert.alert('שגיאה', 'לא ניתן לשלוח את ההודעה: ' + error.message);
     }
   };
 
   const markMessagesAsRead = async () => {
+    if (!actualCurrentUserId) return;
+    
     try {
       const messagesRef = collection(db, 'chatMessages');
       const q = query(
         messagesRef,
         where('chatId', '==', chatId),
-        where('receiverId', '==', currentUserId),
+        where('receiverId', '==', actualCurrentUserId),
         where('read', '==', false)
       );
 
@@ -94,7 +119,7 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const renderMessage = ({ item }) => {
-    const isMine = item.senderId === currentUserId;
+    const isMine = item.senderId === actualCurrentUserId;
     
     return (
       <View style={[
@@ -108,6 +133,15 @@ const ChatScreen = ({ route, navigation }) => {
       </View>
     );
   };
+
+  // אם אין מזהה משתמש, הצג הודעת טעינה
+  if (!actualCurrentUserId) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>טוען...</Text>
+      </View>
+    );
+  }
 
   return (
     <ImageBackground
@@ -146,9 +180,12 @@ const ChatScreen = ({ route, navigation }) => {
             multiline
           />
           <TouchableOpacity 
-            style={styles.sendButton} 
+            style={[
+              styles.sendButton,
+              (!message.trim() || !actualCurrentUserId) && styles.sendButtonDisabled
+            ]} 
             onPress={sendMessage}
-            disabled={message.trim() === ''}
+            disabled={!message.trim() || !actualCurrentUserId}
           >
             <Ionicons name="send" size={24} color="white" />
           </TouchableOpacity>
@@ -159,7 +196,6 @@ const ChatScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  // סגנונות קיימים
   backgroundImage: {
     flex: 1,
     width: '100%',
@@ -246,6 +282,19 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#999',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#666',
   },
 });
 
