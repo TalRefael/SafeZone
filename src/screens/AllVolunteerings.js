@@ -677,15 +677,15 @@ const handleTaskResponse = async (taskId, response) => {
             </View>
           )}
           
-          <Text style={[styles.squareText, { textAlign: 'right', fontWeight: 'bold' }]}>
+          <Text style={[styles.squareText, { textAlign: 'left', fontWeight: 'bold' }]}>
             {item.title || 'לא זמין'}
           </Text>
           
-          <Text style={[styles.squareText, { textAlign: 'right' }]}>
+          <Text style={[styles.squareText, { textAlign: 'left' }]}>
             {formatLocation(item.location)}
           </Text>
           
-          <Text style={[styles.squareText, { textAlign: 'right' }]}>
+          <Text style={[styles.squareText, { textAlign: 'left' }]}>
             {formatDate(item.date)}
           </Text>
           
@@ -735,7 +735,7 @@ const handleTaskResponse = async (taskId, response) => {
 
           {/* כפתור לייק */}
           <TouchableOpacity
-            style={[styles.likeButton, { right: 'auto', left: 10 }]}
+            style={styles.likeButton}
             onPress={(e) => {
               e.stopPropagation();
               handleLikeVolunteering(item);
@@ -907,18 +907,12 @@ const handleTaskResponse = async (taskId, response) => {
           data={filteredVolunteerings}
           keyExtractor={(item) => item.id}
           renderItem={renderVolunteering}
-          numColumns={2}
-          columnWrapperStyle={{ justifyContent: 'flex-end' }}
-          contentContainerStyle={{ direction: 'rtl' }}
+          numColumns={1}
+          key="single-column"
+          contentContainerStyle={{ direction: 'rtl', paddingHorizontal: 10 }}
         />
 
-        {isMenuOpen && (
-          <View style={styles.menu}>
-            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-              <Text style={styles.menuText}>התנתקות</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        
       </Animated.View>
 
       {/* Menu and overlay */}
@@ -971,7 +965,7 @@ const handleTaskResponse = async (taskId, response) => {
                 style={styles.menuItem}
                 onPress={navigateToEditProfile}
               >
-                <Text style={styles.menuTextOnly}>עריכת פרופיל</Text>
+                <Text style={styles.menuTextOnly}>עריכת פרופיל מתנדב</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -1158,6 +1152,7 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     marginLeft: 4,
+    zIndex: 10,
   },
   pickerButton: {
     padding: 10,
@@ -1168,6 +1163,10 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
+    marginRight:-2,
+    marginHorizontal: 5,
+    marginVertical: 5,
+    width: '100%',
   },
   icon: {
     marginTop: 2,
@@ -1177,24 +1176,26 @@ const styles = StyleSheet.create({
   square: {
     flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 25,
-    padding: 10,
-    width: 185,
-    height: 150,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 15,
+    padding: 15,
+    width: '100%',
+    height: 180,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
     margin: 5,
     elevation: 5,
     shadowColor: '#a6a6a6',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
     shadowRadius: 5,
-    position: 'relative', // הוספנו כדי לאפשר מיקום מוחלט של תגית הסטטוס
+    position: 'relative',
   },
   squareText: {
     fontSize: 16,
     color: '#333',
-    textAlign: 'right',
+    textAlign: 'left',
+    marginBottom: 8,
+    width: '100%',
   },
   offeredCard: {
     borderWidth: 2,
@@ -1205,7 +1206,7 @@ const styles = StyleSheet.create({
   ribbonContainer: {
     position: 'absolute',
     top: 10,
-    right: 10,
+    left: 45,
     backgroundColor: '#2c6975',
     paddingVertical: 5,
     paddingHorizontal: 10,
@@ -1250,7 +1251,7 @@ const styles = StyleSheet.create({
   applicationRibbon: {
     position: 'absolute',
     top: 0,
-    right: 0,
+    right: 220,
     backgroundColor: '#3498db',
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -1292,8 +1293,9 @@ const styles = StyleSheet.create({
   },
   likeButton: {
     position: 'absolute',
-    top: 10,
-    left: 10,
+    top: 15,
+    left: 15,
+    zIndex: 2,
   },
   // סגנון חדש עבור תגית הסטטוס
   statusBadge: {
