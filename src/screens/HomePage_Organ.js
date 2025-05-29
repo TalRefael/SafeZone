@@ -181,14 +181,12 @@ const Homepage_Organ = ({ user, navigation }) => {
           }
         }
         setChatNotifications(notifications);
-        updateTotalNotifications();
       };
       
       if (Object.keys(notificationsBySender).length > 0) {
         fetchSenderNames();
       } else {
         setChatNotifications([]);
-        updateTotalNotifications();
       }
     });
     
@@ -210,7 +208,6 @@ const Homepage_Organ = ({ user, navigation }) => {
       }));
       
       setApplicationNotifications(newApplications);
-      updateTotalNotifications();
     });
     
     return () => {
@@ -220,12 +217,8 @@ const Homepage_Organ = ({ user, navigation }) => {
   }, []);
   
   // עדכון סך כל ההתראות
-  const updateTotalNotifications = () => {
-    setTotalNotifications(unreadMessages + applicationNotifications.length);
-  };
-
   useEffect(() => {
-    updateTotalNotifications();
+    setTotalNotifications(unreadMessages + applicationNotifications.length);
   }, [unreadMessages, applicationNotifications]);
 
   const navigateToChat = async (senderId, senderName) => {
@@ -654,8 +647,8 @@ const styles = StyleSheet.create({
   },
   notificationBadge: {
     position: 'absolute',
-    top: -50,
-    right: -5,
+    top: -8,
+    right: -8,
     width: 20,
     height: 20,
     borderRadius: 10,

@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Modal,
   FlatList,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
@@ -39,6 +40,21 @@ const ChatAI_kids = ({ navigation, route }) => {
     childName: childData?.name || 'חבר/ה'
   });
   const scrollViewRef = useRef();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Add animation refs for menu
+  const slideAnim = useRef(new Animated.Value(280)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const mainContentScale = useRef(new Animated.Value(1)).current;
+  const mainContentTranslate = useRef(new Animated.Value(0)).current;
+
+  // Add animation refs for footer
+  const footerAnimations = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0)
+  ]).current;
 
   const navigateToWhatToDo = () => navigation.navigate('WhatToDo');
 
@@ -99,6 +115,19 @@ const ChatAI_kids = ({ navigation, route }) => {
       // עדכן את שלב השיחה
       setConversationContext(prev => ({...prev, stage: 'assessment'}));
     }
+  }, []);
+  
+  useEffect(() => {
+    // Animate footer buttons
+    footerAnimations.forEach((anim, index) => {
+      Animated.spring(anim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        delay: index * 200,
+        useNativeDriver: true,
+      }).start();
+    });
   }, []);
   
   // גלילה אוטומטית למטה בכל פעם שנוספת הודעה חדשה
@@ -441,216 +470,303 @@ ${messages.map(msg => `${msg.role === 'user' ? 'הילד/ה' : 'החבר הדי�
   // אמוג'ים פופולריים לילדים
   const popularEmojis = ['😊', '😃', '🤗', '👍', '❤️', '🌈', '🎮', '🎨', '🎵', '🐶', '🐱', '🦁', '🦄', '🌟', '🎁'];
 
+  const navigateToChatList = () => navigation.navigate('ChatListScreen', { 
+    childData: childData,
+    isChildUser: true 
+  });
+
+  const openMenu = () => {
+    setIsMenuOpen(true);
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(overlayOpacity, {
+        toValue: 0.6,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(mainContentScale, {
+        toValue: 0.85,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(mainContentTranslate, {
+        toValue: -50,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeMenu = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 280,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(mainContentScale, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(mainContentTranslate, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsMenuOpen(false);
+    });
+  };
+
+  const toggleMenu = () => {
+    if (isMenuOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const auth = getAuth();
+      await signOut(auth);
+      navigation.replace('Login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   return (
-    <ImageBackground
-      source={require('../../assets/kids.png')} // רקע מותאם לילדים
-      style={styles.background}
-      imageStyle={{ opacity: 0.3 }} // שקיפות על התמונה בלבד
-    >
-        
-      <View style={styles.container}>
-        {/* חצי עיגול עם גרדיאנט */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-          
-        {/* הוספת כפתור היסטוריה */}
-        <TouchableOpacity 
-          style={styles.historyButton} 
-          onPress={() => setHistoryModalVisible(true)}
-        >
-          <LinearGradient
-            colors={['#ff78a8', '#ffdb8b']}
-            style={styles.historyButtonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Ionicons name="time-outline" size={26} color="white" />
-          </LinearGradient>
-        </TouchableOpacity>
-        
-        <Animated.View
+    <Pressable style={styles.container} onPress={closeMenu}>
+      <ImageBackground
+        source={require('../../assets/kids.png')}
+        style={styles.background}
+        imageStyle={{ opacity: 0.3 }}
+      >
+        {/* Wrap main content in Animated.View */}
+        <Animated.View 
           style={[
-            styles.halfCircle,
+            styles.mainContentContainer,
             {
               transform: [
-                { translateY },
-                { scale: circleScale }
-              ],
-            },
+                { scale: mainContentScale },
+                { translateX: mainContentTranslate }
+              ]
+            }
           ]}
         >
+          <View style={styles.container}>
+            {/* חצי עיגול עם גרדיאנט */}
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+              
+            {/* הוספת כפתור היסטוריה */}
+            <TouchableOpacity 
+              style={styles.historyButton} 
+              onPress={() => setHistoryModalVisible(true)}
+            >
+              <LinearGradient
+                colors={['#ff78a8', '#ffdb8b']}
+                style={styles.historyButtonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Ionicons name="time-outline" size={26} color="white" />
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <Animated.View
+              style={[
+                styles.halfCircle,
+                {
+                  transform: [
+                    { translateY },
+                    { scale: circleScale }
+                  ],
+                },
+              ]}
+            >
 
-          <LinearGradient
-            colors={['#FF9CC0', '#FFDB8B', '#FF78A8']} // צבעי ורוד וצהוב
-            locations={[0, 0.5, 1]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.gradient, { zIndex: 0 }]}
-          />
-          <View style={styles.halfCircleTextContainer}>
-            <Image 
-              //source={require('../../assets/smiley.png')} // תוסיף תמונה של פרצוף מחייך
-              style={styles.smileyIcon}
+              <LinearGradient
+                colors={['#FF9CC0', '#FFDB8B', '#FF78A8']} // צבעי ורוד וצהוב
+                locations={[0, 0.5, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.gradient, { zIndex: 0 }]}
+              />
+              <View style={styles.halfCircleTextContainer}>
+                <Image 
+                  //source={require('../../assets/smiley.png')} // תוסיף תמונה של פרצוף מחייך
+                  style={styles.smileyIcon}
+                />
+              </View>
+            </Animated.View>
+
+          
+            {/* אזור הצ'אט */}
+            <View style={styles.chatArea}>
+              <ScrollView 
+                style={styles.chatContainer}
+                ref={scrollViewRef}
+                contentContainerStyle={styles.chatContentContainer}
+              >
+                {messages.map((message, index) => (
+                  <View 
+                    key={index} 
+                    style={[
+                      styles.messageContainer,
+                      message.role === 'user' ? styles.userMessageContainer : styles.aiMessageContainer
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={message.role === 'user' ? ['#FF78A8', '#FF9CC0'] : ['#FFDB8B', '#FFB443']} // ורוד למשתמש, צהוב/כתום לבוט
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[
+                        styles.messageGradient,
+                        message.role === 'user' ? styles.userMessageGradient : styles.aiMessageGradient
+                      ]}
+                    >
+                      <Text style={styles.messageText}>
+                        {message.content}
+                      </Text>
+                    </LinearGradient>
+                    {message.role === 'assistant' && (
+                      <Image 
+                        //source={require('../../assets/robot.png')} // תוסיף אייקון של רובוט חמוד
+                        style={styles.avatarIcon}
+                      />
+                    )}
+                  </View>
+                ))}
+                {error ? (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.errorMessage}>{error}</Text>
+                  </View>
+                ) : null}
+                {isLoading && (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#FF78A8" />
+                    <Text style={styles.loadingText}>חושב...</Text>
+                  </View>
+                )}
+              </ScrollView>
+
+              {/* בחירת אימוג'י */}
+              {showEmojiPicker && (
+                <View style={styles.emojiPickerContainer}>
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.emojiRow}
+                  >
+                    {popularEmojis.map((emoji, index) => (
+                      <TouchableOpacity 
+                        key={index} 
+                        style={styles.emojiButton}
+                        onPress={() => insertEmoji(emoji)}
+                      >
+                        <Text style={styles.emojiText}>{emoji}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
+              <View style={styles.inputContainer}>
+                <TouchableOpacity
+                  style={styles.emojiPickerButton}
+                  onPress={() => setShowEmojiPicker(!showEmojiPicker)}
+                >
+                  <Ionicons name="happy-outline" size={24} color="#FF78A8" />
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder="ספר/י לי מה את/ה מרגיש/ה..."
+                  placeholderTextColor="#999"
+                  value={userInput}
+                  onChangeText={setUserInput}
+                  editable={!isLoading}
+                  multiline={true}
+                  numberOfLines={2}
+                />
+                <TouchableOpacity
+                  onPress={sendMessage}
+                  disabled={isLoading}
+                  style={styles.sendButton}
+                >
+                  <LinearGradient
+                    colors={['#FF78A8', '#FFDB8B']} // ורוד וצהוב
+                    style={styles.sendButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Ionicons name="paper-plane" size={22} color="white" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+                 {/* לוטי: אנימציה בחלק התחתון בצד */}
+                 <LottieView
+              source={require('../../assets/animations/robot2.json')} // הנתיב לאנימציה
+              autoPlay
+              loop
+              style={styles.lottie}
             />
           </View>
         </Animated.View>
 
-      
-        {/* אזור הצ'אט */}
-        <View style={styles.chatArea}>
-          <ScrollView 
-            style={styles.chatContainer}
-            ref={scrollViewRef}
-            contentContainerStyle={styles.chatContentContainer}
-          >
-            {messages.map((message, index) => (
-              <View 
-                key={index} 
-                style={[
-                  styles.messageContainer,
-                  message.role === 'user' ? styles.userMessageContainer : styles.aiMessageContainer
-                ]}
-              >
-                <LinearGradient
-                  colors={message.role === 'user' ? ['#FF78A8', '#FF9CC0'] : ['#FFDB8B', '#FFB443']} // ורוד למשתמש, צהוב/כתום לבוט
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[
-                    styles.messageGradient,
-                    message.role === 'user' ? styles.userMessageGradient : styles.aiMessageGradient
-                  ]}
-                >
-                  <Text style={styles.messageText}>
-                    {message.content}
-                  </Text>
-                </LinearGradient>
-                {message.role === 'assistant' && (
-                  <Image 
-                    //source={require('../../assets/robot.png')} // תוסיף אייקון של רובוט חמוד
-                    style={styles.avatarIcon}
-                  />
-                )}
-              </View>
-            ))}
-            {error ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorMessage}>{error}</Text>
-              </View>
-            ) : null}
-            {isLoading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#FF78A8" />
-                <Text style={styles.loadingText}>חושב...</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          {/* בחירת אימוג'י */}
-          {showEmojiPicker && (
-            <View style={styles.emojiPickerContainer}>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.emojiRow}
-              >
-                {popularEmojis.map((emoji, index) => (
-                  <TouchableOpacity 
-                    key={index} 
-                    style={styles.emojiButton}
-                    onPress={() => insertEmoji(emoji)}
-                  >
-                    <Text style={styles.emojiText}>{emoji}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          <View style={styles.inputContainer}>
-            <TouchableOpacity
-              style={styles.emojiPickerButton}
-              onPress={() => setShowEmojiPicker(!showEmojiPicker)}
-            >
-              <Ionicons name="happy-outline" size={24} color="#FF78A8" />
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              placeholder="ספר/י לי מה את/ה מרגיש/ה..."
-              placeholderTextColor="#999"
-              value={userInput}
-              onChangeText={setUserInput}
-              editable={!isLoading}
-              multiline={true}
-              numberOfLines={2}
-            />
-            <TouchableOpacity
-              onPress={sendMessage}
-              disabled={isLoading}
-              style={styles.sendButton}
-            >
-              <LinearGradient
-                colors={['#FF78A8', '#FFDB8B']} // ורוד וצהוב
-                style={styles.sendButtonGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <Ionicons name="paper-plane" size={22} color="white" />
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </View>
-             {/* לוטי: אנימציה בחלק התחתון בצד */}
-             <LottieView
-        source={require('../../assets/animations/robot2.json')} // הנתיב לאנימציה
-        autoPlay
-        loop
-        style={styles.lottie}
-      />
-        {/* פוטר עם גרדיאנט */}
+        {/* Footer */}
         <View style={styles.footer}>
           <LinearGradient
-            colors={['#FFDB8B', '#FF78A8', '#FFDB8B']} // ורוד וצהוב
+            colors={['#FFDB8B', '#FF78A8', '#FFDB8B']}
             locations={[0, 0.5, 1]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.footerGradient}
           >
-            {/* כפתורים בפוטר עם אנימציות */}
-            {[0, 1, 2].map((buttonIndex, animIndex) => (
+            {[0, 1, 2, 3].map((index) => (
               <Animated.View
-                key={buttonIndex}
+                key={index}
                 style={{
-                  opacity: buttonAnimations[animIndex],
+                  opacity: footerAnimations[index],
                   transform: [
-                    { scale: buttonAnimations[animIndex] },
-                    { translateY: buttonAnimations[animIndex].interpolate({
+                    { scale: footerAnimations[index] },
+                    { translateY: footerAnimations[index].interpolate({
                       inputRange: [0, 1],
                       outputRange: [10, 0]
                     })}
                   ],
                 }}
               >
-           <TouchableOpacity
+                <TouchableOpacity 
                   onPress={() => {
-                    if (buttonIndex === 0) {
-                      navigateToHomePage();
-                    } else if (buttonIndex === 1) {
-                      startNewChat();
-                    } else if (buttonIndex === 2) {
-                      navigateToWhatToDo();
-                    }
+                    if (index === 0) navigateToHomePage();
+                    else if (index === 1) navigateToWhatToDo();
+                    else if (index === 2) navigateToChatList();
+                    else if (index === 3) toggleMenu();
                   }}
-                  style={styles.footerButton}
                 >
-                  <Ionicons
-                    name={buttonIndex === 0 ? "home" : buttonIndex === 1 ? "add-circle" : "information-circle"}
-                    size={26}
-                    color="white"
+                  <Image
+                    source={
+                      index === 0 ? require('../../assets/house.png') :
+                      index === 1 ? require('../../assets/mark.png') :
+                      index === 2 ? require('../../assets/love-2.png') :
+                      require('../../assets/menu.png')
+                    }
+                    style={styles.footerIcon}
                   />
-                  <Text style={styles.footerButtonText}>
-                    {buttonIndex === 0 ? "עמוד ראשי" : buttonIndex === 1 ? "שיחה חדשה" : "מה לעשות?"}
-                  </Text>
                 </TouchableOpacity>
               </Animated.View>
             ))}
@@ -723,8 +839,79 @@ ${messages.map(msg => `${msg.role === 'user' ? 'הילד/ה' : 'החבר הדי�
             </View>
           </View>
         </Modal>
-      </View>
-    </ImageBackground>
+      </ImageBackground>
+
+      {/* Menu and overlay */}
+      {isMenuOpen && (
+        <>
+          <Animated.View 
+            style={[
+              styles.overlay,
+              { opacity: overlayOpacity }
+            ]}
+          >
+            <TouchableOpacity 
+              style={styles.overlayTouch}
+              onPress={closeMenu}
+              activeOpacity={1}
+            />
+          </Animated.View>
+          
+          <Animated.View 
+            style={[
+              styles.sideMenu,
+              { 
+                transform: [{ translateX: slideAnim }],
+                shadowColor: '#000',
+                shadowOffset: { width: -5, height: 0 },
+                shadowOpacity: 0.3,
+                shadowRadius: 10,
+                elevation: 20,
+              }
+            ]}
+          >
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>תפריט</Text>
+              <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.menuProfile}>
+              <Image
+                source={childData?.gender === 'זכר' ? require('../../assets/men.png') : require('../../assets/women.png')}
+                style={styles.menuProfileImage}
+              />
+              <Text style={styles.menuProfileName}>שלום, {childData?.name || 'חבר/ה'}!</Text>
+              <Text style={styles.menuProfileSubtitle}>משתמש ילד</Text>
+            </View>
+            
+            <View style={styles.menuContent}>
+              <TouchableOpacity 
+                style={styles.logoutMenuItem}
+                onPress={() => {
+                  closeMenu();
+                  handleLogout();
+                }}
+              >
+                <View style={styles.logoutTextContainer}>
+                  <Text style={styles.logoutText}>התנתקות</Text>
+                  <Text style={styles.logoutSubText}>יציאה מהמערכת</Text>
+                </View>
+                <View style={styles.logoutIconContainer}>
+                  <Ionicons name="log-out" size={22} color="white" />
+                </View>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.menuFooter}>
+              <Text style={styles.menuFooterText}>המרחב הבטוח שלך</Text>
+              <View style={styles.menuFooterDot} />
+            </View>
+          </Animated.View>
+        </>
+      )}
+    </Pressable>
   );
 };
 
@@ -917,29 +1104,23 @@ emojiPickerContainer: {
     // פוטר ומדיניות
     footer: {
       width: '100%',
-      height: 70,
       position: 'absolute',
       bottom: 0,
-      overflow: 'hidden',
-      zIndex: 6,
+      left: 0,
+      right: 0,
+      zIndex: 5,
     },
     footerGradient: {
-      flex: 1,
       flexDirection: 'row',
       justifyContent: 'space-around',
       alignItems: 'center',
-      paddingHorizontal: 20,
+      paddingHorizontal: 30,
+      paddingVertical: 15,
+      width: '100%',
     },
-    footerButton: {
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 5, // הוספת ריפוד
-    },
-    footerButtonText: {
-      color: 'white',
-      fontSize: 12, 
-      marginTop: 3,
-      textAlign: 'center',
+    footerIcon: {
+      width: 30,
+      height: 30,
     },
     
     // סגנונות להודעות שגיאה וטעינה
@@ -1058,17 +1239,150 @@ emojiPickerContainer: {
       fontSize: 16,
     },
     closeButton: {
-      marginTop: 10,
-      backgroundColor: '#f0f0f0',
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 15,
-      width: '100%',
+      padding: 8,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     closeButtonText: {
       textAlign: 'center',
       color: '#333',
       fontSize: 16,
+    },
+    mainContentContainer: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
+    },
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'black',
+      zIndex: 999,
+    },
+    overlayTouch: {
+      flex: 1,
+    },
+    sideMenu: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      width: 280,
+      height: '100%',
+      backgroundColor: '#fff',
+      zIndex: 1000,
+      elevation: 10,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: -2,
+        height: 0,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+    },
+    menuHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paxddingTop: 60,
+      paddingBottom: 20,
+      backgroundColor: '#ff9c9e',
+    },
+    menuTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#fff',
+      textAlign: 'right',
+    },
+    menuProfile: {
+      alignItems: 'center',
+      paddingVertical: 25,
+      paddingHorizontal: 20,
+      backgroundColor: '#f8f9fa',
+      borderBottomWidth: 1,
+      borderBottomColor: '#e9ecef',
+    },
+    menuProfileImage: {
+      width: 70,
+      height: 70,
+      borderRadius: 35,
+      marginBottom: 12,
+      borderWidth: 3,
+      borderColor: '#2c6975',
+    },
+    menuProfileName: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#2c6975',
+      marginBottom: 4,
+    },
+    menuProfileSubtitle: {
+      fontSize: 14,
+      color: '#6c757d',
+    },
+    menuContent: {
+      flex: 1,
+      paddingTop: 10,
+    },
+    logoutMenuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: '#f1f3f4',
+      justifyContent: 'space-between',
+    },
+    logoutTextContainer: {
+      flex: 1,
+      alignItems: 'flex-end',
+    },
+    logoutText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#e74c3c',
+      textAlign: 'right',
+      marginBottom: 2,
+    },
+    logoutSubText: {
+      fontSize: 12,
+      color: '#6c757d',
+      textAlign: 'right',
+    },
+    logoutIconContainer: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#e74c3c',
+      marginLeft: 15,
+    },
+    menuFooter: {
+      alignItems: 'center',
+      paddingVertical: 20,
+      paddingHorizontal: 20,
+      backgroundColor: '#f8f9fa',
+      borderTopWidth: 1,
+      borderTopColor: '#e9ecef',
+    },
+    menuFooterText: {
+      fontSize: 12,
+      color: '#6c757d',
+      marginBottom: 8,
+    },
+    menuFooterDot: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: '#2c6975',
     },
   });
 
