@@ -45,14 +45,14 @@ import ChatAI_kids from './src/screens/ChatAI_kids';
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(false); // Let the device settings determine RTL
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAHSaADPY5CgOuVraCQ8DKrQrIsrTMonmA",
-  authDomain: "safezonefinal.firebaseapp.com",
-  projectId: "safezonefinal",
-  storageBucket: "safezonefinal.firebasestorage.app",
-  messagingSenderId: "705042810802",
-  appId: "1:705042810802:web:a9338026ac395ac5efc6ab",
-  measurementId: "G-NWFCN00D80"
+ const firebaseConfig = {
+  apiKey: "",
+  authDomain: ".firebaseapp.com",
+  projectId: "",
+  storageBucket: ".firebasestorage.app",
+  messagingSenderId: "",
+  appId: "1::web:",
+  measurementId: "G-"
 };
 
 const app = initializeApp(firebaseConfig);
