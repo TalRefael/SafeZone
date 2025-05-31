@@ -112,7 +112,7 @@ export default function App({ navigation }) {
 
     const { latitude, longitude } = coords;
     try {
-      const response = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&keyword=מקלט&type=shelter&language=he&key=AIzaSyB07kE_rkZtWdabbSVwRrfRYcHukMeYzx0`);
+      const response = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&keyword=מקלט&type=shelter&language=he&key=_`);
       const data = await response.json();
       
       console.log(data.results);
@@ -169,7 +169,7 @@ export default function App({ navigation }) {
     
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=AIzaSyB07kE_rkZtWdabbSVwRrfRYcHukMeYzx0&sessiontoken=${sessionToken.current}`
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=AIzaSyB07kE_=${sessionToken.current}`
       );
       const data = await response.json();
 
@@ -186,7 +186,7 @@ export default function App({ navigation }) {
 
         // חיפוש מקלטים באזור המיקום הנבחר
         try {
-          const shelterResponse = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=1000&keyword=מקלט&type=shelter&language=he&key=AIzaSyB07kE_rkZtWdabbSVwRrfRYcHukMeYzx0`);
+          const shelterResponse = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=1000&keyword=מקלט&type=shelter&language=he&key=AIzaSyB07kE_`);
           const shelterData = await shelterResponse.json();
 
           if (shelterData.status === 'OK') {
@@ -228,7 +228,7 @@ export default function App({ navigation }) {
 
         // חיפוש מקלטים באזור העיר
         try {
-          const shelterResponse = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=1000&keyword=מקלט&type=shelter&language=he&key=AIzaSyB07kE_rkZtWdabbSVwRrfRYcHukMeYzx0`);
+          const shelterResponse = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=1000&keyword=מקלט&type=shelter&language=he&key=AIzaSyB07kE_`);
           const shelterData = await shelterResponse.json();
 
           if (shelterData.status === 'OK') {
